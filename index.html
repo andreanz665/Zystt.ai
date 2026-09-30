@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zyst.ai</title>
+<style>
+:root{--text:#f4f6ff;--mut:#b9c2e6;--acc:#ffc629;--acct:#1a2150;--bot:rgba(255,255,255,.12);--card:rgba(10,18,60,.72);--bd:rgba(255,255,255,.2);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--text:#f4f6ff}}
+:root[data-theme="dark"]{--text:#f4f6ff}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+html{background:linear-gradient(160deg,#0b1a6b 0%,#1b3fc4 45%,#f5b800 120%) fixed}
+body{background:transparent;color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;max-width:760px;margin:0 auto}
+header{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;background:var(--card)}
+.logo{width:42px;height:42px;border-radius:10px;background:#0a1450;border:1px solid rgba(255,255,255,.18);display:grid;place-items:center;font-weight:900;font-size:28px;font-family:Arial Black,Impact,system-ui,sans-serif;color:#ffc629;line-height:1;text-shadow:2px 2px 0 #b07e00}
+header h1{font-size:19px;margin:0;letter-spacing:.3px}header h1 span{color:var(--acc)}header p{margin:0;font-size:12px;color:var(--mut)}
+#clear{margin-left:auto;background:none;border:1px solid var(--bd);color:var(--mut);border-radius:8px;padding:6px 10px;cursor:pointer}
+#log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.m{max-width:85%;padding:10px 14px;border-radius:16px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;font-size:15px}
+.u{align-self:flex-end;background:var(--acc);color:var(--acct);border-bottom-right-radius:4px;font-weight:500}
+.b{align-self:flex-start;background:var(--bot);border-bottom-left-radius:4px;backdrop-filter:blur(6px)}
+.hint{text-align:center;color:var(--mut);font-size:14px;margin:auto 0}
+.hint b{color:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+.chips button{background:var(--card);border:1px solid var(--bd);color:var(--text);border-radius:999px;padding:8px 12px;cursor:pointer;font-size:13px}
+footer{padding:12px 16px;border-top:1px solid var(--bd);display:flex;gap:8px;background:var(--card)}
+textarea{flex:1;resize:none;border:1px solid var(--bd);background:rgba(255,255,255,.1);color:var(--text);border-radius:12px;padding:10px 12px;font:inherit;max-height:120px}
+textarea::placeholder{color:var(--mut)}
+#send{background:var(--acc);color:var(--acct);border:0;border-radius:12px;padding:0 18px;font-weight:700;cursor:pointer}
+#send:disabled{opacity:.5}
+#attach{background:transparent;border:1px solid var(--bd);color:var(--mut);border-radius:12px;width:44px;display:grid;place-items:center;cursor:pointer}#attach:hover{color:var(--acc);border-color:var(--acc)}
+#note{display:none;padding:6px 16px 0;font-size:12px;color:#ffd84a;background:var(--card)}
+#tray{display:none;flex-wrap:wrap;gap:8px;padding:8px 16px 0;background:var(--card)}
+.att{position:relative;display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--bd);border-radius:10px;padding:4px 26px 4px 4px;font-size:12px;max-width:180px}
+.att img{width:34px;height:34px;object-fit:cover;border-radius:6px}
+.att .ic{width:34px;height:34px;display:grid;place-items:center;color:var(--mut)}
+.att span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att button{position:absolute;top:2px;right:2px;border:0;background:none;color:var(--mut);cursor:pointer;font-size:14px}
+.m img{max-width:160px;max-height:160px;border-radius:8px;display:block;margin-bottom:6px}
+.m .fn{font-size:12px;opacity:.85;margin-bottom:4px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Z</div>
+  <div><h1>Zyst<span>.ai</span></h1><p>Asisten umum tanya jawab</p></div>
+  <button id="clear">Reset</button>
+</header>
+<div id="log"></div>
+<div id="note"></div>
+<div id="tray"></div>
+<footer>
+  <button id="attach" title="Tambah foto atau file"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 9"/></svg></button>
+  <input id="file" type="file" multiple hidden accept="image/*,application/pdf,.pdf,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.xml,.log,.yml,.yaml,.sql,text/*">
+  <textarea id="in" rows="1" placeholder="Tanyakan apa saja..."></textarea>
+  <button id="send">Kirim</button>
+</footer>
+<script>
+const log=document.getElementById('log'),input=document.getElementById('in'),send=document.getElementById('send');
+const tray=document.getElementById('tray'),fileIn=document.getElementById('file');
+let history=[],busy=false,pending=[];
+function intro(){
+  log.innerHTML='<div class="hint">Halo! Saya <b>Zyst.ai</b>. Mau tanya apa hari ini?<div class="chips"></div></div>';
+  ["Jelaskan apa itu AI dengan sederhana","Buatkan ide bisnis kecil","Tips belajar efektif"].forEach(t=>{
+    const b=document.createElement('button');b.textContent=t;b.onclick=()=>ask(t);log.querySelector('.chips').appendChild(b);});
+}
+function add(cls,text){const d=document.createElement('div');d.className='m '+cls;if(text!==undefined)d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
+function renderTray(){
+  tray.innerHTML='';tray.style.display=pending.length?'flex':'none';
+  pending.forEach((a,i)=>{const d=document.createElement('div');d.className='att';
+    if(a.kind==='image'){const im=document.createElement('img');im.src=a.url;d.appendChild(im);}
+    else{const ic=document.createElement('div');ic.className='ic';ic.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';d.appendChild(ic);}
+    const n=document.createElement('span');n.textContent=a.name;d.appendChild(n);
+    const x=document.createElement('button');x.textContent='×';x.onclick=()=>{pending.splice(i,1);renderTray();};d.appendChild(x);
+    tray.appendChild(d);});
+}
+function b64(f){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result.split(',')[1]);r.onerror=no;r.readAsDataURL(f);});}
+function note(t){const n=document.getElementById('note');n.textContent=t||'';n.style.display=t?'block':'none';}
+async function shrink(f){
+  let src;
+  try{src=await createImageBitmap(f);}
+  catch(e){src=await new Promise((ok,no)=>{const r=new FileReader();r.onerror=no;r.onload=()=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=r.result;};r.readAsDataURL(f);});}
+  const k=Math.min(1,1280/Math.max(src.width,src.height)),c=document.createElement('canvas');
+  c.width=Math.round(src.width*k);c.height=Math.round(src.height*k);
+  c.getContext('2d').drawImage(src,0,0,c.width,c.height);
+  const u=c.toDataURL('image/jpeg',.85);return {url:u,data:u.split(',')[1]};
+}
+document.getElementById('attach').onclick=()=>fileIn.click();
+fileIn.onchange=async()=>{
+  note('');
+  for(const f of Array.from(fileIn.files)){
+    try{
+      const isImg=f.type.startsWith('image/')||/\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(f.name);
+      if(isImg){const r=await shrink(f);pending.push({kind:'image',name:f.name,url:r.url,data:r.data});}
+      else if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){
+        if(f.size>3e6){note('PDF "'+f.name+'" terlalu besar (maks 3 MB).');continue;}
+        pending.push({kind:'pdf',name:f.name,data:await b64(f)});}
+      else if(f.type.startsWith('text/')||/\.(txt|md|csv|json|js|ts|py|html|css|xml|log|ya?ml|sql)$/i.test(f.name)){
+        let t=await f.text();if(t.length>100000)t=t.slice(0,100000)+"\n...[dipotong]";pending.push({kind:'text',name:f.name,text:t});}
+      else note('Format "'+f.name+'" belum didukung.');
+    }catch(e){note('Gagal membaca "'+f.name+'". Coba pilih foto dari galeri/penyimpanan HP, bukan dari cloud.');}
+  }
+  fileIn.value='';renderTray();
+};
+async function ask(text){
+  text=(text||'').trim();const atts=pending.slice();
+  if((!text&&!atts.length)||busy)return;
+  if(history.length===0)log.innerHTML='';
+  busy=true;send.disabled=true;input.value='';pending=[];renderTray();
+  const ub=add('u');
+  atts.forEach(a=>{if(a.kind==='image'){const im=document.createElement('img');im.src=a.url;ub.appendChild(im);}
+    else{const f=document.createElement('div');f.className='fn';f.textContent=a.name;ub.appendChild(f);}});
+  if(text)ub.appendChild(document.createTextNode(text));
+  const blocks=[];let body=text||"Tolong analisis lampiran ini.";
+  atts.forEach(a=>{
+    if(a.kind==='image')blocks.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:a.data}});
+    else if(a.kind==='pdf')blocks.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:a.data}});
+    else body+="\n\n[File: "+a.name+"]\n"+a.text;});
+  blocks.push({type:'text',text:body});
+  const out=add('b','Berpikir...');
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:[...history,{role:'user',content:blocks}]})});
+    const raw=await r.text();let d;try{d=JSON.parse(raw);}catch(e){throw new Error('Server AI (/api/chat) tidak ditemukan. Website harus di-deploy di Vercel dengan folder api di root project.');}
+    if(!r.ok)throw new Error(d.error||'Server error');
+    out.textContent=d.text;
+    history.push({role:'user',content:body},{role:'assistant',content:d.text});
+  }catch(e){out.textContent="Maaf, terjadi kendala: "+e.message;}
+  busy=false;send.disabled=false;input.focus();
+}
+send.onclick=()=>ask(input.value);
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(input.value);}});
+document.getElementById('clear').onclick=()=>{history=[];pending=[];renderTray();intro();};
+intro();
+</script>
+</body>
+</html>
