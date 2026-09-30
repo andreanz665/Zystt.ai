@@ -5,7 +5,7 @@ const LIMIT = Number(process.env.RATE_LIMIT || 20), WINDOW = 10 * 60 * 1000;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API key belum diatur di server.' });
+  if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: 'API key belum diatur di server.' });
 
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
   const now = Date.now();
@@ -19,15 +19,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Format pesan tidak valid.' });
 
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('https://api.GEMINI.com/v1/messages', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'x-api-key': process.env.GEMINI_API_KEY,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: process.env.MODEL || 'claude-sonnet-5-5',
+        model: process.env.MODEL || 'gemini 3.6 flash',
         max_tokens: 1500,
         system: SYSTEM,
         messages: clean
